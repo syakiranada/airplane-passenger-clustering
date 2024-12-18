@@ -2,7 +2,7 @@ import streamlit as st
 
 st.title('Airplane Passenger Satisfaction Clustering')
 # This is The Header
-st.header("Kelompok 4 Kelas D", divider="green")
+st.header("Kelompok 4 Kelas D")
 
 with st.expander("**Anggota**"):
       # Anggota
