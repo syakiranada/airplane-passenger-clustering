@@ -6,11 +6,9 @@ from sklearn.decomposition import PCA
 import joblib
 
 st.title('Airplane Passenger Satisfaction Clustering')
-# This is The Header
 st.header("Kelompok 4 Kelas D")
 
 with st.expander("Anggota"):
-    # Anggota
     st.markdown("""
     -  Rania (24060122120013)  
     -  Happy Desita W (24060122120023)  
@@ -29,70 +27,72 @@ def preprocess_inference(data):
     # Ensure data is a DataFrame
     if isinstance(data, dict):
         data = pd.DataFrame([data])
+
+    # Keep exact column names as they were in training
+    data.rename(columns={
+        "Departure/Arrival time convenient": "Departure Arrival time convenient",
+        "Gate location": "Gate location",
+        "Leg room service": "Leg room service",
+        "Checkin service": "Checkin service",
+        "Cleanliness": "Cleanliness",
+        "Inflight entertainment": "Inflight entertainment",
+        "Seat comfort": "Seat comfort",
+        "Food and drink": "Food and drink",
+        "Inflight wifi service": "Inflight wifi service",
+        "Ease of Online booking": "Ease of Online booking",
+        "Online boarding": "Online boarding",
+        "Inflight service": "Inflight service",
+        "Baggage handling": "Baggage handling",
+        "On-board service": "On-board service"
+    }, inplace=True)
     
-    # Create a mapping dictionary for column name standardization
-    column_mapping = {
-        "Departure/Arrival time convenient": "Departure_Arrival_time_convenient",
-        "Gate location": "Gate_location",
-        "Leg room service": "Leg_room_service",
-        "Checkin service": "Checkin_service",
-        "Inflight entertainment": "Inflight_entertainment",
-        "Seat comfort": "Seat_comfort",
-        "Food and drink": "Food_and_drink",
-        "Inflight wifi service": "Inflight_wifi_service",
-        "Ease of Online booking": "Ease_of_Online_booking",
-        "Online boarding": "Online_boarding",
-        "Inflight service": "Inflight_service",
-        "Baggage handling": "Baggage_handling",
-        "On-board service": "On_board_service"
-    }
-    
-    # Rename columns
-    data = data.rename(columns=column_mapping)
-    
-    # Map Class values
+    # Map Class values exactly as in training
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
     data['Class'] = data['Class'].map(class_mapping)
     
-    # Define feature groups as they were during training
-    group1 = ['Cleanliness', 'Inflight_entertainment', 'Seat_comfort', 'Food_and_drink']
-    group2 = ['Inflight_wifi_service', 'Ease_of_Online_booking', 'Online_boarding']
-    group3 = ['Inflight_service', 'Baggage_handling', 'On_board_service']
+    # Define feature groups exactly as they were in training
+    group1 = ['Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink']
+    group2 = ['Inflight wifi service', 'Ease of Online booking', 'Online boarding']
+    group3 = ['Inflight service', 'Baggage handling', 'On-board service']
     
-    # Create numerical features DataFrame
+    # Numerical features exactly as in training
     numerical_features = [
-        'Age', 'Class', 'Departure_Arrival_time_convenient',
-        'Gate_location', 'Leg_room_service', 'Checkin_service'
+        'Age', 
+        'Class',
+        'Departure Arrival time convenient',
+        'Gate location',
+        'Leg room service',
+        'Checkin service'
     ]
     
-    # Scale group features
+    # Scale and transform features
     data_group1 = scaler.transform(data[group1])
     data_group2 = scaler.transform(data[group2])
     data_group3 = scaler.transform(data[group3])
     
-    # Apply PCA transformation
+    # Apply PCA
     group1_pca = pca_group1.transform(data_group1)
     group2_pca = pca_group2.transform(data_group2)
     group3_pca = pca_group3.transform(data_group3)
     
-    # Create final feature matrix
-    pca_features = np.hstack([group1_pca, group2_pca, group3_pca])
-    numerical_data = data[numerical_features].values
+    # Create final feature matrix with exact column names
+    pca_cols = [
+        'Group1_PC1', 'Group1_PC2',
+        'Group2_PC1', 'Group2_PC2',
+        'Group3_PC1', 'Group3_PC2'
+    ]
     
-    # Combine all features
-    final_features = np.hstack([numerical_data, pca_features])
-    
-    # Convert to DataFrame with proper column names
-    feature_names = (
-        numerical_features +
-        ['Group1_PC1', 'Group1_PC2'] +
-        ['Group2_PC1', 'Group2_PC2'] +
-        ['Group3_PC1', 'Group3_PC2']
+    # Combine all features maintaining exact order
+    final_features = pd.DataFrame(data[numerical_features].values, columns=numerical_features)
+    pca_features = pd.DataFrame(
+        np.hstack([group1_pca, group2_pca, group3_pca]),
+        columns=pca_cols
     )
-    return pd.DataFrame(final_features, columns=feature_names)
+    
+    return pd.concat([final_features, pca_features], axis=1)
 
 st.header("Masukkan Data untuk Klasifikasi")
-# Form input pengguna
+
 with st.form("data_input_form"):
     Class = st.selectbox("Class", ["Business", "Eco Plus", "Eco"])
     Age = st.number_input("Age", min_value=0, max_value=100, value=25)
@@ -137,12 +137,20 @@ if submitted:
     }
     
     try:
-        # Preprocessing
+        # Debug: Show input data
+        st.write("Input features:")
+        st.write(pd.DataFrame([user_data]))
+        
+        # Preprocess and predict
         processed_data = preprocess_inference(user_data)
         
-        # For debugging
+        # Debug: Show processed data
         st.write("Processed features:")
         st.write(processed_data)
+        
+        # Show feature names for debugging
+        st.write("Feature names in processed data:", processed_data.columns.tolist())
+        st.write("Feature names expected by model:", kmeans.feature_names_in_.tolist())
         
         # Predict cluster
         cluster = kmeans.predict(processed_data)[0]
@@ -150,4 +158,5 @@ if submitted:
         
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
-        st.write("Please check if all required model files (kmeans_model.pkl, scaler.pkl, and PCA files) are present and properly formatted.")
+        st.write("Debug information:")
+        st.write("Please ensure your model was trained with these exact feature names and order.")
