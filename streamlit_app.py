@@ -1,4 +1,8 @@
 import streamlit as st
+import pandas as pd
+import numpy as np  # Untuk operasi numerik
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 import joblib
 
 st.title('Airplane Passenger Satisfaction Clustering')
