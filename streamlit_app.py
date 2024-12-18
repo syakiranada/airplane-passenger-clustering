@@ -30,15 +30,27 @@ def preprocess_inference(data):
     group2 = ['Inflight wifi service', 'Ease of Online booking', 'Online boarding']
     group3 = ['Inflight service', 'Baggage handling', 'On-board service']
     
+    # Validasi kolom
+    required_columns = group1 + group2 + group3
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Kolom berikut tidak ada dalam data input: {missing_columns}")
+    
     # Skalakan data dengan scaler dari training
-    data_group1 = scaler.transform(data[group1])
-    data_group2 = scaler.transform(data[group2])
-    data_group3 = scaler.transform(data[group3])
+    try:
+        data_group1 = scaler.transform(data[group1])
+        data_group2 = scaler.transform(data[group2])
+        data_group3 = scaler.transform(data[group3])
+    except Exception as e:
+        raise ValueError(f"Error saat menggunakan scaler.transform: {e}")
     
     # Hitung principal components dengan PCA dari training
-    group1_pca = pca_group1.transform(data_group1)
-    group2_pca = pca_group2.transform(data_group2)
-    group3_pca = pca_group3.transform(data_group3)
+    try:
+        group1_pca = pca_group1.transform(data_group1)
+        group2_pca = pca_group2.transform(data_group2)
+        group3_pca = pca_group3.transform(data_group3)
+    except Exception as e:
+        raise ValueError(f"Error saat menggunakan PCA transform: {e}")
     
     # Konversi hasil PCA ke DataFrame
     df_group1_pca = pd.DataFrame(group1_pca, columns=['Group1_PC1', 'Group1_PC2'])
