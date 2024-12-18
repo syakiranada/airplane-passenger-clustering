@@ -15,12 +15,11 @@ with st.expander("**Anggota**"):
         """)
 
 # Load model, scaler dan PCA dari training
-kmeans = joblib.load("kmeans.pkl")
+kmeans = joblib.load("kmeans_model.pkl")
 scaler = joblib.load('scaler.pkl')  # Scaler yang disimpan saat training
 pca_group1 = joblib.load('pca_group1.pkl')  # PCA Group1 dari training
 pca_group2 = joblib.load('pca_group2.pkl')  # PCA Group2 dari training
 pca_group3 = joblib.load('pca_group3.pkl')  # PCA Group3 dari training
-kmeans = joblib.load("kmeans.pkl")
 
 def preprocess_inference(data):
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
