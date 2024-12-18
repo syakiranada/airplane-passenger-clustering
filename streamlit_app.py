@@ -61,7 +61,7 @@ with st.form("data_input_form"):
     Age = st.number_input("Age", min_value=0, max_value=100, value=25)
     Departure_Arrival_time_convenient = st.slider("Departure/Arrival time convenient", 0, 5)
     Gate_location = st.slider("Gate location", 1, 5)
-    Leg room service = st.slider("Leg room service", 0, 5)
+    Leg_room_service = st.slider("Leg room service", 0, 5)
     Checkin_service = st.slider("Checkin service", 1, 5)
     
     Cleanliness = st.slider("Cleanliness", 0, 5)
