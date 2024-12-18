@@ -103,7 +103,7 @@ if submitted:
     }
     
     # Preprocessing
-    processed_data = preprocess_input(user_data)
+    processed_data = preprocess_inference(user_data)
     
     # Prediksi cluster
     cluster = kmeans.predict([processed_data])[0]
