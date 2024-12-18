@@ -121,7 +121,9 @@ if submitted:
     # Preprocessing
     processed_data = preprocess_inference(user_data)
     
+    # Debug: Menampilkan data yang telah diproses
+    st.write(processed_data)
+    
     # Prediksi cluster
-    cluster = kmeans.predict([processed_data])[0]
+    cluster = kmeans.predict(processed_data)[0]
     st.write(f"Data Anda termasuk dalam Cluster: {cluster}")
-
