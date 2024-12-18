@@ -22,35 +22,35 @@ pca_group2 = joblib.load('pca_group2.pkl')  # PCA Group2 dari training
 pca_group3 = joblib.load('pca_group3.pkl')  # PCA Group3 dari training
 
 def preprocess_inference(data):
+    # Pastikan data adalah DataFrame
+    if isinstance(data, dict):
+        data = pd.DataFrame([data])  # Konversi dictionary ke DataFrame
+    
+    # Mapping untuk kolom 'Class'
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
-    data['Class'] = class_mapping[data['Class']]
+    if 'Class' in data.columns:
+        data['Class'] = data['Class'].map(class_mapping)
       
-    # Fitur grup
+    # Definisi grup fitur
     group1 = ['Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink']
     group2 = ['Inflight wifi service', 'Ease of Online booking', 'Online boarding']
     group3 = ['Inflight service', 'Baggage handling', 'On-board service']
     
-    # Validasi kolom
+    # Validasi kolom input
     required_columns = group1 + group2 + group3
     missing_columns = [col for col in required_columns if col not in data.columns]
     if missing_columns:
         raise ValueError(f"Kolom berikut tidak ada dalam data input: {missing_columns}")
     
     # Skalakan data dengan scaler dari training
-    try:
-        data_group1 = scaler.transform(data[group1])
-        data_group2 = scaler.transform(data[group2])
-        data_group3 = scaler.transform(data[group3])
-    except Exception as e:
-        raise ValueError(f"Error saat menggunakan scaler.transform: {e}")
+    data_group1 = scaler.transform(data[group1])
+    data_group2 = scaler.transform(data[group2])
+    data_group3 = scaler.transform(data[group3])
     
     # Hitung principal components dengan PCA dari training
-    try:
-        group1_pca = pca_group1.transform(data_group1)
-        group2_pca = pca_group2.transform(data_group2)
-        group3_pca = pca_group3.transform(data_group3)
-    except Exception as e:
-        raise ValueError(f"Error saat menggunakan PCA transform: {e}")
+    group1_pca = pca_group1.transform(data_group1)
+    group2_pca = pca_group2.transform(data_group2)
+    group3_pca = pca_group3.transform(data_group3)
     
     # Konversi hasil PCA ke DataFrame
     df_group1_pca = pd.DataFrame(group1_pca, columns=['Group1_PC1', 'Group1_PC2'])
