@@ -34,6 +34,22 @@ def preprocess_inference(data):
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
     if 'Class' in data.columns:
         data['Class'] = data['Class'].map(class_mapping)
+          
+    # Definisi kolom yang diharapkan sesuai urutan saat training
+    expected_columns = [
+        'Age', 'Class', 'Departure/Arrival time convenient', 'Gate location',
+        'Leg room service', 'Checkin service', 'Cleanliness', 'Inflight entertainment',
+        'Seat comfort', 'Food and drink', 'Inflight wifi service', 'Ease of Online booking',
+        'Online boarding', 'Inflight service', 'Baggage handling', 'On-board service'
+    ]
+    
+    # Menambah kolom yang hilang dengan nilai default (misalnya 0)
+    # missing_columns = [col for col in expected_columns if col not in data.columns]
+    # for col in missing_columns:
+    #     data[col] = 0  # Menambahkan kolom yang hilang dengan nilai default
+    
+    # Urutkan kolom sesuai dengan yang digunakan saat pelatihan
+    data = data[expected_columns]
       
     # Definisi grup fitur
     group1 = ['Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink']
