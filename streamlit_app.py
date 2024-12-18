@@ -26,52 +26,57 @@ pca_group2 = joblib.load('pca_group2.pkl')  # PCA Group2 dari training
 pca_group3 = joblib.load('pca_group3.pkl')  # PCA Group3 dari training
 
 def preprocess_inference(data):
-    # Pastikan data adalah DataFrame
+    # Ensure data is a DataFrame
     if isinstance(data, dict):
-        data = pd.DataFrame([data])  # Konversi dictionary ke DataFrame
+        data = pd.DataFrame([data])
     
-    # Mapping untuk kolom 'Class'
+    # Rename columns if scaler was trained with underscores
+    data.rename(columns={
+        "Inflight entertainment": "Inflight_entertainment",
+        "Seat comfort": "Seat_comfort",
+        "Food and drink": "Food_and_drink",
+        "Inflight wifi service": "Inflight_wifi_service",
+        "Ease of Online booking": "Ease_of_Online_booking",
+        "On-board service": "On_board_service"
+    }, inplace=True)
+    
+    # Mapping for 'Class'
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
     if 'Class' in data.columns:
         data['Class'] = data['Class'].map(class_mapping)
     
-    # Definisi grup fitur
-    group1 = ['Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink']
-    group2 = ['Inflight wifi service', 'Ease of Online booking', 'Online boarding']
-    group3 = ['Inflight service', 'Baggage handling', 'On-board service']
+    # Define feature groups
+    group1 = ['Cleanliness', 'Inflight_entertainment', 'Seat_comfort', 'Food_and_drink']
+    group2 = ['Inflight_wifi_service', 'Ease_of_Online_booking', 'Online_boarding']
+    group3 = ['Inflight_service', 'Baggage_handling', 'On_board_service']
     
-    # Validasi kolom input
+    # Validate input columns
     required_columns = group1 + group2 + group3
     missing_columns = [col for col in required_columns if col not in data.columns]
     if missing_columns:
-        raise ValueError(f"Kolom berikut tidak ada dalam data input: {missing_columns}")
+        raise ValueError(f"Missing columns in input data: {missing_columns}")
     
-    # Reorder the columns to match the expected input for the scaler
-    data = data[['Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink',
-                 'Inflight wifi service', 'Ease of Online booking', 'Online boarding',
-                 'Inflight service', 'Baggage handling', 'On-board service']]  # Reordered columns
+    # Scale each group with respective scaler
+    data_group1 = scaler_group1.transform(data[group1])
+    data_group2 = scaler_group2.transform(data[group2])
+    data_group3 = scaler_group3.transform(data[group3])
     
-    # Skalakan data dengan scaler dari training
-    data_group1 = scaler.transform(data[group1])
-    data_group2 = scaler.transform(data[group2])
-    data_group3 = scaler.transform(data[group3])
-    
-    # Hitung principal components dengan PCA dari training
+    # Apply PCA
     group1_pca = pca_group1.transform(data_group1)
     group2_pca = pca_group2.transform(data_group2)
     group3_pca = pca_group3.transform(data_group3)
     
-    # Konversi hasil PCA ke DataFrame
+    # Convert PCA results to DataFrames
     df_group1_pca = pd.DataFrame(group1_pca, columns=['Group1_PC1', 'Group1_PC2'])
     df_group2_pca = pd.DataFrame(group2_pca, columns=['Group2_PC1', 'Group2_PC2'])
     df_group3_pca = pd.DataFrame(group3_pca, columns=['Group3_PC1', 'Group3_PC2'])
     
-    # Gabungkan hasil PCA dengan data asli
+    # Combine PCA results with original data
     data.reset_index(drop=True, inplace=True)
     df_pca_combined = pd.concat([data, df_group1_pca, df_group2_pca, df_group3_pca], axis=1)
     
-    # Drop fitur asli yang direduksi
-    df_pca_combined = df_pca_combined.drop(columns=group1 + group2 + group3)
+    # Drop original features
+    df_pca_combined = df_pca_combined.drop(columns=required_columns)
     
     return df_pca_combined
 
