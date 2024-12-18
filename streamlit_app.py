@@ -9,7 +9,7 @@ st.title('Airplane Passenger Satisfaction Clustering')
 # This is The Header
 st.header("Kelompok 4 Kelas D")
 
-with st.expander("**Anggota**"):
+with st.expander("*Anggota*"):
       # Anggota
       st.markdown("""
       -  Rania (24060122120013)  
@@ -18,7 +18,7 @@ with st.expander("**Anggota**"):
       -  Asy’syifa Shabrina M (24060122130055)  
         """)
 
-# Load model, scaler dan PCA dari training
+# Load model, scaler, and PCA from training
 kmeans = joblib.load("kmeans_model.pkl")
 scaler = joblib.load('scaler.pkl')  # Scaler yang disimpan saat training
 pca_group1 = joblib.load('pca_group1.pkl')  # PCA Group1 dari training
@@ -30,22 +30,28 @@ def preprocess_inference(data):
     if isinstance(data, dict):
         data = pd.DataFrame([data])
     
-    # Rename columns if scaler was trained with underscores
+    # Rename columns to match scaler's expectations
     data.rename(columns={
         "Inflight entertainment": "Inflight_entertainment",
         "Seat comfort": "Seat_comfort",
         "Food and drink": "Food_and_drink",
         "Inflight wifi service": "Inflight_wifi_service",
         "Ease of Online booking": "Ease_of_Online_booking",
+        "Online boarding": "Online_boarding",
+        "Inflight service": "Inflight_service",
+        "Baggage handling": "Baggage_handling",
         "On-board service": "On_board_service"
     }, inplace=True)
+    
+    # Debug: Print columns after renaming
+    st.write("Columns after renaming:", data.columns.tolist())
     
     # Mapping for 'Class'
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
     if 'Class' in data.columns:
         data['Class'] = data['Class'].map(class_mapping)
-    
-    # Define feature groups
+      
+    # Define feature groups with renamed columns
     group1 = ['Cleanliness', 'Inflight_entertainment', 'Seat_comfort', 'Food_and_drink']
     group2 = ['Inflight_wifi_service', 'Ease_of_Online_booking', 'Online_boarding']
     group3 = ['Inflight_service', 'Baggage_handling', 'On_board_service']
@@ -56,10 +62,10 @@ def preprocess_inference(data):
     if missing_columns:
         raise ValueError(f"Missing columns in input data: {missing_columns}")
     
-    # Scale each group with respective scaler
-    data_group1 = scaler_group1.transform(data[group1])
-    data_group2 = scaler_group2.transform(data[group2])
-    data_group3 = scaler_group3.transform(data[group3])
+    # Scale each group with the scaler
+    data_group1 = scaler.transform(data[group1])
+    data_group2 = scaler.transform(data[group2])
+    data_group3 = scaler.transform(data[group3])
     
     # Apply PCA
     group1_pca = pca_group1.transform(data_group1)
@@ -75,11 +81,10 @@ def preprocess_inference(data):
     data.reset_index(drop=True, inplace=True)
     df_pca_combined = pd.concat([data, df_group1_pca, df_group2_pca, df_group3_pca], axis=1)
     
-    # Drop original features
+    # Drop original features that were reduced
     df_pca_combined = df_pca_combined.drop(columns=required_columns)
     
     return df_pca_combined
-
 
 st.header("Masukkan Data untuk Klasifikasi")
 # Form input pengguna
@@ -104,12 +109,12 @@ with st.form("data_input_form"):
     Baggage_handling = st.slider("Baggage handling", 1, 5)
     On_board_service = st.slider("On-board service", 0, 5)
     
-    # Submit tombol
+    # Submit button
     submitted = st.form_submit_button("Submit")
 
-# Jika form disubmit
+# If form is submitted
 if submitted:
-    # Buat dictionary dari input pengguna
+    # Create a dictionary from user input
     user_data = {
         "Class": Class,
         "Age": Age,
@@ -129,12 +134,17 @@ if submitted:
         "On-board service": On_board_service
     }
     
-    # Preprocessing
-    processed_data = preprocess_inference(user_data)
-    
-    # Debug: Menampilkan data yang telah diproses
-    st.write(processed_data)
-    
-    # Prediksi cluster
-    cluster = kmeans.predict(processed_data)[0]
-    st.write(f"Data Anda termasuk dalam Cluster: {cluster}")
+    try:
+        # Preprocessing
+        processed_data = preprocess_inference(user_data)
+        
+        # Debug: Display processed data
+        st.write(processed_data)
+        
+        # Predict cluster
+        cluster = kmeans.predict(processed_data)[0]
+        st.write(f"Data Anda termasuk dalam Cluster: {cluster}")
+    except ValueError as ve:
+        st.error(f"Input Error: {ve}")
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
