@@ -45,6 +45,10 @@ def preprocess_inference(data):
     
     # Debug: Print columns after renaming
     st.write("Columns after renaming:", data.columns.tolist())
+
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Kolom berikut tidak ada dalam data input: {missing_columns}")
     
     # Mapping for 'Class'
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
