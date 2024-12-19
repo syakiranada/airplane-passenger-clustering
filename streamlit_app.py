@@ -35,7 +35,6 @@ with st.form("clustering_form"):
     departure_convenience = st.slider("Kemudahan Waktu Keberangkatan dan Kedatangan (Departure/Arrival time convenient)", 0, 5, 3)
     gate_location = st.slider("Lokasi Gerbang (Gate Location)", 0, 5, 3)
     leg_room_service = st.slider("Layanan Ruang Kaki (Leg Room Service)", 0, 5, 3)
-    checkin_service = st.slider("Layanan Check-in (Checkin service)", 0, 5, 3)
     cleanliness = st.slider("Kebersihan (Cleanliness)", 0, 5, 3)
     inflight_entertainment = st.slider("Hiburan di Pesawat (Inflight Entertainment)", 0, 5, 3)
     seat_comfort = st.slider("Kenyamanan Kursi (Seat Comfort)", 0, 5, 3)
@@ -61,7 +60,6 @@ if submitted:
         'Departure Arrival time convenient': departure_convenience,
         'Gate location': gate_location,
         'Leg room service': leg_room_service,
-        'Checkin service': checkin_service,
         'Cleanliness': cleanliness,
         'Inflight entertainment': inflight_entertainment,
         'Seat comfort': seat_comfort,
