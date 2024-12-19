@@ -23,6 +23,8 @@ pca_group1 = joblib.load('pca_group1.pkl')
 pca_group2 = joblib.load('pca_group2.pkl')
 pca_group3 = joblib.load('pca_group3.pkl')
 
+st.write("Expected features from model:", kmeans.feature_names_in_.tolist())
+
 def preprocess_inference(data):
     if isinstance(data, dict):
         data = pd.DataFrame([data])
