@@ -21,9 +21,9 @@ expected_columns = [
 ]
 
 def preprocess_inference(data):
-    # Convert to DataFrame if not already
+    # Convert dictionary to DataFrame
     if isinstance(data, dict):
-        data = pd.DataFrame([data])
+        data = pd.DataFrame([data])  # Create DataFrame for single row
 
     # Ensure required columns are present
     required_columns = ['Age', 'Class', 'Departure Arrival time convenient', 
@@ -38,10 +38,13 @@ def preprocess_inference(data):
         st.error(f"Missing columns in input data: {', '.join(missing_columns)}")
         return None
 
-    # Handle scaling and PCA separately:
     # Convert 'Class' to numerical
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
     data['Class'] = data['Class'].map(class_mapping)
+
+    if data['Class'].isnull().any():
+        st.error("Invalid 'Class' value. Please use 'Business', 'Eco Plus', or 'Eco'.")
+        return None
 
     # Extract features to scale for PCA
     features_to_scale = [
@@ -84,24 +87,25 @@ def preprocess_inference(data):
 
     return final_data
 
-# Example of how to use the preprocess_inference function
+
+# Example input
 input_data = {
-    'Age': [25],
-    'Class': ['Business'],
-    'Departure Arrival time convenient': [1],
-    'Gate location': ['A1'],
-    'Leg room service': [4],
-    'Checkin service': [5],
-    'Cleanliness': [4],
-    'Inflight entertainment': [3],
-    'Seat comfort': [5],
-    'Food and drink': [3],
-    'Inflight wifi service': [2],
-    'Ease of Online booking': [4],
-    'Online boarding': [3],
-    'Inflight service': [5],
-    'Baggage handling': [4],
-    'On-board service': [5]
+    'Age': 25,
+    'Class': 'Business',
+    'Departure Arrival time convenient': 1,
+    'Gate location': 3,
+    'Leg room service': 4,
+    'Checkin service': 5,
+    'Cleanliness': 4,
+    'Inflight entertainment': 3,
+    'Seat comfort': 5,
+    'Food and drink': 3,
+    'Inflight wifi service': 2,
+    'Ease of Online booking': 4,
+    'Online boarding': 3,
+    'Inflight service': 5,
+    'Baggage handling': 4,
+    'On-board service': 5
 }
 
 # Pass the input data into the function
