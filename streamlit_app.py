@@ -70,6 +70,8 @@ if submitted:
         'Inflight wifi service', 'Ease of Online booking', 'Online boarding',
         'Inflight service', 'Baggage handling', 'On-board service'
     ]
+
+    scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_features = scaler.transform(data_df[features_to_scale])
     
     # Combine unscaled and scaled features
