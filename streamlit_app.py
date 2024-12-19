@@ -30,8 +30,8 @@ scaler.fit(dummy_data)  # Fit scaler with the expected range of features
 
 # Input Form
 with st.form("clustering_form"):
-    age = st.number_input("Masukkan Usia (Age)", min_value=0, max_value=100, step=1)
-    flight_class = st.selectbox("Pilih Kelas Penerbangan (Class)", ["Business", "Eco Plus", "Eco"])
+    age = st.number_input("Masukkan Usia (Age)", min_value=0, max_value=100, step=1, value=25)
+    flight_class = st.selectbox("Pilih Kelas Penerbangan (Class)", ["Business", "Eco Plus", "Eco"], index=2)
     departure_convenience = st.slider("Kemudahan Waktu Keberangkatan dan Kedatangan (Departure/Arrival time convenient)", 0, 5, 3)
     gate_location = st.slider("Lokasi Gerbang (Gate Location)", 0, 5, 3)
     leg_room_service = st.slider("Layanan Ruang Kaki (Leg Room Service)", 0, 5, 3)
