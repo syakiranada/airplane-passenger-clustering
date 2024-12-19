@@ -54,8 +54,16 @@ def preprocess_inference(data):
         'Online boarding', 'Inflight service', 'Baggage handling', 'On-board service'
     ]
 
+    # Debug print to check feature names
+    print("Input data columns:", data.columns.tolist())
+    print("Expected features to scale:", features_to_scale)
+
     # Scale the features
-    scaled_data = scaler.transform(data[features_to_scale])
+    try:
+        scaled_data = scaler.transform(data[features_to_scale])
+    except ValueError as e:
+        st.error(f"Error during scaling: {e}")
+        return None
 
     # Apply PCA to the scaled features for each group
     pca_group1_result = pca_group1.transform(scaled_data[:, 6:10])  # Columns for 'Group1'
@@ -86,7 +94,6 @@ def preprocess_inference(data):
     st.write("Cluster prediction for this input data:", cluster_prediction[0])
 
     return final_data
-
 
 # Example input
 input_data = {
