@@ -28,7 +28,7 @@ def preprocess_inference(data):
     if isinstance(data, dict):
         data = pd.DataFrame([data])
 
-    # Keep exact column names as they were in training
+    # Rename columns to match the training set
     data.rename(columns={
         "Departure/Arrival time convenient": "Departure Arrival time convenient",
         "Gate location": "Gate location",
@@ -46,18 +46,13 @@ def preprocess_inference(data):
         "On-board service": "On-board service"
     }, inplace=True)
     
-    # Map Class values exactly as in training
+    # Map 'Class' values to match the training set
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
     data['Class'] = data['Class'].map(class_mapping)
     
-    # Define feature groups exactly as they were in training
-    group1 = ['Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink']
-    group2 = ['Inflight wifi service', 'Ease of Online booking', 'Online boarding']
-    group3 = ['Inflight service', 'Baggage handling', 'On-board service']
-    
-    # Numerical features exactly as in training
+    # Numerical features
     numerical_features = [
-        'Age', 
+        'Age',
         'Class',
         'Departure Arrival time convenient',
         'Gate location',
@@ -65,7 +60,12 @@ def preprocess_inference(data):
         'Checkin service'
     ]
     
-    # Scale and transform features (ensure these features exist in the data before scaling)
+    # Feature groups (same as during training)
+    group1 = ['Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink']
+    group2 = ['Inflight wifi service', 'Ease of Online booking', 'Online boarding']
+    group3 = ['Inflight service', 'Baggage handling', 'On-board service']
+    
+    # Scale the features (ensure these columns exist in the data before scaling)
     try:
         data_group1 = scaler.transform(data[group1])
         data_group2 = scaler.transform(data[group2])
@@ -74,7 +74,7 @@ def preprocess_inference(data):
         st.error(f"KeyError: One or more columns are missing: {str(e)}")
         return None
     
-    # Apply PCA (check for successful transformation)
+    # Apply PCA (ensure PCA was fitted during training with the same data)
     try:
         group1_pca = pca_group1.transform(data_group1)
         group2_pca = pca_group2.transform(data_group2)
@@ -83,24 +83,30 @@ def preprocess_inference(data):
         st.error(f"Error during PCA transformation: {str(e)}")
         return None
     
-    # Create final feature matrix with exact column names
-    pca_cols = [
-        'Group1_PC1', 'Group1_PC2',
-        'Group2_PC1', 'Group2_PC2',
-        'Group3_PC1', 'Group3_PC2'
-    ]
-    
-    # Combine all features maintaining exact order (avoid mismatch)
-    final_features = pd.DataFrame(data[numerical_features].values, columns=numerical_features)
+    # Add PCA components to the final data
+    pca_cols = ['Group1_PC1', 'Group1_PC2', 'Group2_PC1', 'Group2_PC2', 'Group3_PC1', 'Group3_PC2']
     pca_features = pd.DataFrame(
         np.hstack([group1_pca, group2_pca, group3_pca]),
         columns=pca_cols
     )
     
-    # Ensure the final feature names match what the model expects
+    # Combine numerical features and PCA components to form final features
+    final_features = pd.DataFrame(data[numerical_features].values, columns=numerical_features)
+    
+    # Ensure all features match the training model's order
     final_data = pd.concat([final_features, pca_features], axis=1)
-
-    # Debug: Show final features
+    
+    # Ensure final_data has the correct column order and features (including PCA)
+    expected_columns = [
+        'Age', 'Class', 'Departure Arrival time convenient', 'Gate location', 
+        'Leg room service', 'Checkin service', 'Group1_PC1', 'Group1_PC2',
+        'Group2_PC1', 'Group2_PC2', 'Group3_PC1', 'Group3_PC2'
+    ]
+    
+    # Check if columns are in the correct order
+    final_data = final_data[expected_columns]
+    
+    # Debug: Show final feature names
     st.write("Final feature names for inference:", final_data.columns.tolist())
     
     return final_data
