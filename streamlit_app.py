@@ -32,17 +32,17 @@ scaler.fit(dummy_data)  # Fit scaler with the expected range of features
 with st.form("clustering_form"):
     age = st.number_input("Masukkan Usia (Age)", min_value=0, max_value=100, step=1)
     flight_class = st.selectbox("Pilih Kelas Penerbangan (Class)", ["Business", "Eco Plus", "Eco"])
-    departure_convenience = st.slider("Kemudahan Waktu Keberangkatan dan Kedatangan", 0, 5, 3)
+    departure_convenience = st.slider("Kemudahan Waktu Keberangkatan dan Kedatangan (Departure/Arrival time convenient)", 0, 5, 3)
     gate_location = st.slider("Lokasi Gerbang (Gate Location)", 0, 5, 3)
     leg_room_service = st.slider("Layanan Ruang Kaki (Leg Room Service)", 0, 5, 3)
-    checkin_service = st.slider("Layanan Check-in", 0, 5, 3)
+    checkin_service = st.slider("Layanan Check-in (Checkin service)", 0, 5, 3)
     cleanliness = st.slider("Kebersihan (Cleanliness)", 0, 5, 3)
     inflight_entertainment = st.slider("Hiburan di Pesawat (Inflight Entertainment)", 0, 5, 3)
     seat_comfort = st.slider("Kenyamanan Kursi (Seat Comfort)", 0, 5, 3)
     food_and_drink = st.slider("Makanan dan Minuman (Food and Drink)", 0, 5, 3)
-    inflight_wifi = st.slider("Wi-Fi di Pesawat (Inflight WiFi)", 0, 5, 3)
+    inflight_wifi = st.slider("Wi-Fi di Pesawat (Inflight WiFi service)", 0, 5, 3)
     online_booking = st.slider("Kemudahan Pemesanan Online (Ease of Online Booking)", 0, 5, 3)
-    online_boarding = st.slider("Proses Boarding Online", 0, 5, 3)
+    online_boarding = st.slider("Proses Boarding Online (Online boarding)", 0, 5, 3)
     inflight_service = st.slider("Layanan di Pesawat (Inflight Service)", 0, 5, 3)
     baggage_handling = st.slider("Penanganan Bagasi (Baggage Handling)", 0, 5, 3)
     onboard_service = st.slider("Layanan di Pesawat (On-board Service)", 0, 5, 3)
@@ -105,8 +105,3 @@ if submitted:
     # Display the result
     st.write(f"Data Anda masuk ke dalam Cluster: {cluster}")
     
-    # Predict cluster
-    cluster = kmeans.predict(final_data)[0]
-    
-    # Display the result
-    st.write(f"Data Anda masuk ke dalam Cluster: {cluster}")
