@@ -16,6 +16,18 @@ from sklearn.preprocessing import MinMaxScaler
 st.title("Passenger Clustering App")
 st.write("Aplikasi ini akan memprediksi cluster untuk data penumpang berdasarkan input fitur Anda.")
 
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+import pandas as pd
+import streamlit as st
+
+# Initialize MinMaxScaler
+scaler = MinMaxScaler(feature_range=(0, 1))
+
+# Fit the scaler with dummy data for the expected range
+dummy_data = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]])
+scaler.fit(dummy_data)  # Fit scaler with the expected range of features
+
 # Input Form
 with st.form("clustering_form"):
     age = st.number_input("Masukkan Usia (Age)", min_value=0, max_value=100, step=1)
@@ -70,36 +82,28 @@ if submitted:
         'Inflight wifi service', 'Ease of Online booking', 'Online boarding',
         'Inflight service', 'Baggage handling', 'On-board service'
     ]
-
-    scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_features = scaler.transform(data_df[features_to_scale])
-    
+
     # Combine unscaled and scaled features
     unscaled_features = data_df[['Age', 'Class', 'Departure Arrival time convenient', 'Gate location', 'Leg room service', 'Checkin service']].values
     combined_features = np.hstack([unscaled_features, scaled_features])
-    
-    # Validate dimensions
-    st.write(f"Shape of combined features: {combined_features.shape}")
-    
-    # Define indices for PCA groups based on combined_features
-    # Adjust these indices based on your actual PCA training
-    pca_group1_features = combined_features[:, 6:10]  # Group1: Features 6-9
-    pca_group2_features = combined_features[:, 10:13]  # Group2: Features 10-12
-    pca_group3_features = combined_features[:, 13:]  # Group3: Features 13+
-    
-    # Apply PCA for each group
-    pca_group1_result = pca_group1.transform(pca_group1_features)
-    pca_group2_result = pca_group2.transform(pca_group2_features)
-    pca_group3_result = pca_group3.transform(pca_group3_features)
-    
+
+    # Apply PCA for each group (assumes pca_group1, pca_group2, pca_group3, and kmeans are already loaded)
+    pca_group1_result = pca_group1.transform(combined_features[:, 6:10])  # Group1
+    pca_group2_result = pca_group2.transform(combined_features[:, 10:13])  # Group2
+    pca_group3_result = pca_group3.transform(combined_features[:, 13:])  # Group3
+
     # Combine results
     pca_features = np.hstack([pca_group1_result, pca_group2_result, pca_group3_result])
-    
+
     # Include unscaled features and PCA features for final prediction
     final_data = np.hstack([unscaled_features, pca_features])
-    
-    # Validate dimensions of final_data
-    st.write(f"Shape of final data for clustering: {final_data.shape}")
+
+    # Predict cluster
+    cluster = kmeans.predict(final_data)[0]
+
+    # Display the result
+    st.write(f"Data Anda masuk ke dalam Cluster: {cluster}")
     
     # Predict cluster
     cluster = kmeans.predict(final_data)[0]
