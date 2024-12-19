@@ -4,11 +4,13 @@ import pandas as pd
 import joblib
 
 # Load pre-trained models and scalers
-scaler = joblib.load('scaler.pkl')
+# scaler = joblib.load('scaler.pkl')
 pca_group1 = joblib.load('pca_group1.pkl')
 pca_group2 = joblib.load('pca_group2.pkl')
 pca_group3 = joblib.load('pca_group3.pkl')
 kmeans = joblib.load('kmeans_model.pkl')
+
+from sklearn.preprocessing import MinMaxScaler
 
 # Title and Description
 st.title("Passenger Clustering App")
@@ -68,7 +70,10 @@ if submitted:
         'Inflight wifi service', 'Ease of Online booking', 'Online boarding',
         'Inflight service', 'Baggage handling', 'On-board service'
     ]
-    scaled_features = scaler.transform(data_df[features_to_scale])
+    
+    # Initialize MinMaxScaler and fit to expected ranges (0-5 for all features except 'Age')
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled_features = scaler.fit_transform(data_df[features_to_scale])
 
     # Combine unscaled and scaled features
     unscaled_features = data_df[['Age', 'Class', 'Departure Arrival time convenient', 'Gate location', 'Leg room service', 'Checkin service']].values
