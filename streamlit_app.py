@@ -46,9 +46,6 @@ def preprocess_inference(data):
         "On-board service": "On-board service"
     }, inplace=True)
     
-    # Check columns after renaming
-    st.write("Columns after renaming:", data.columns.tolist())
-
     # Map Class values exactly as in training
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
     data['Class'] = data['Class'].map(class_mapping)
@@ -68,15 +65,23 @@ def preprocess_inference(data):
         'Checkin service'
     ]
     
-    # Scale and transform features
-    data_group1 = scaler.transform(data[group1])
-    data_group2 = scaler.transform(data[group2])
-    data_group3 = scaler.transform(data[group3])
+    # Scale and transform features (ensure these features exist in the data before scaling)
+    try:
+        data_group1 = scaler.transform(data[group1])
+        data_group2 = scaler.transform(data[group2])
+        data_group3 = scaler.transform(data[group3])
+    except KeyError as e:
+        st.error(f"KeyError: One or more columns are missing: {str(e)}")
+        return None
     
-    # Apply PCA
-    group1_pca = pca_group1.transform(data_group1)
-    group2_pca = pca_group2.transform(data_group2)
-    group3_pca = pca_group3.transform(data_group3)
+    # Apply PCA (check for successful transformation)
+    try:
+        group1_pca = pca_group1.transform(data_group1)
+        group2_pca = pca_group2.transform(data_group2)
+        group3_pca = pca_group3.transform(data_group3)
+    except Exception as e:
+        st.error(f"Error during PCA transformation: {str(e)}")
+        return None
     
     # Create final feature matrix with exact column names
     pca_cols = [
@@ -85,7 +90,7 @@ def preprocess_inference(data):
         'Group3_PC1', 'Group3_PC2'
     ]
     
-    # Combine all features maintaining exact order
+    # Combine all features maintaining exact order (avoid mismatch)
     final_features = pd.DataFrame(data[numerical_features].values, columns=numerical_features)
     pca_features = pd.DataFrame(
         np.hstack([group1_pca, group2_pca, group3_pca]),
@@ -94,8 +99,10 @@ def preprocess_inference(data):
     
     # Ensure the final feature names match what the model expects
     final_data = pd.concat([final_features, pca_features], axis=1)
-    st.write("Final feature names for inference:", final_data.columns.tolist())
 
+    # Debug: Show final features
+    st.write("Final feature names for inference:", final_data.columns.tolist())
+    
     return final_data
 
 
