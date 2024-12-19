@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import streamlit as st
+import joblib
 
 # Load the pre-trained model, scaler, and PCA components
 scaler = joblib.load('scaler.pkl')  # Assuming the scaler was trained on these features
