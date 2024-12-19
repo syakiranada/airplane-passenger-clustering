@@ -46,6 +46,9 @@ def preprocess_inference(data):
         "On-board service": "On-board service"
     }, inplace=True)
     
+    # Check columns after renaming
+    st.write("Columns after renaming:", data.columns.tolist())
+
     # Map Class values exactly as in training
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
     data['Class'] = data['Class'].map(class_mapping)
@@ -89,7 +92,12 @@ def preprocess_inference(data):
         columns=pca_cols
     )
     
-    return pd.concat([final_features, pca_features], axis=1)
+    # Ensure the final feature names match what the model expects
+    final_data = pd.concat([final_features, pca_features], axis=1)
+    st.write("Final feature names for inference:", final_data.columns.tolist())
+
+    return final_data
+
 
 st.header("Masukkan Data untuk Klasifikasi")
 
