@@ -1,119 +1,92 @@
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
 import streamlit as st
+import numpy as np
+import pandas as pd
 import joblib
 
-# Load the pre-trained model, scaler, and PCA components
-scaler = joblib.load('scaler.pkl')  # Assuming the scaler was trained on these features
-pca_group1 = joblib.load('pca_group1.pkl')  # Example PCA for 'Group1'
-pca_group2 = joblib.load('pca_group2.pkl')  # Example PCA for 'Group2'
-pca_group3 = joblib.load('pca_group3.pkl')  # Example PCA for 'Group3'
-kmeans = joblib.load('kmeans_model.pkl')  # Loaded pre-trained KMeans model
+# Load pre-trained models and scalers
+scaler = joblib.load('scaler.pkl')
+pca_group1 = joblib.load('pca_group1.pkl')
+pca_group2 = joblib.load('pca_group2.pkl')
+pca_group3 = joblib.load('pca_group3.pkl')
+kmeans = joblib.load('kmeans_model.pkl')
 
-# Model training columns (expected columns)
-expected_columns = [
-    'Age', 'Class', 'Departure Arrival time convenient', 'Gate location', 
-    'Leg room service', 'Checkin service', 'Group1_PC1', 'Group1_PC2', 
-    'Group2_PC1', 'Group2_PC2', 'Group3_PC1', 'Group3_PC2'
-]
+# Title and Description
+st.title("Passenger Clustering App")
+st.write("Aplikasi ini akan memprediksi cluster untuk data penumpang berdasarkan input fitur Anda.")
 
-def preprocess_inference(data):
-    # Convert dictionary to DataFrame
-    if isinstance(data, dict):
-        data = pd.DataFrame([data])  # Create DataFrame for single row
+# Input Form
+with st.form("clustering_form"):
+    age = st.number_input("Masukkan Usia (Age)", min_value=0, max_value=100, step=1)
+    flight_class = st.selectbox("Pilih Kelas Penerbangan (Class)", ["Business", "Eco Plus", "Eco"])
+    departure_convenience = st.slider("Kemudahan Waktu Keberangkatan dan Kedatangan", 0, 5, 3)
+    gate_location = st.slider("Lokasi Gerbang (Gate Location)", 0, 5, 3)
+    leg_room_service = st.slider("Layanan Ruang Kaki (Leg Room Service)", 0, 5, 3)
+    checkin_service = st.slider("Layanan Check-in", 0, 5, 3)
+    cleanliness = st.slider("Kebersihan (Cleanliness)", 0, 5, 3)
+    inflight_entertainment = st.slider("Hiburan di Pesawat (Inflight Entertainment)", 0, 5, 3)
+    seat_comfort = st.slider("Kenyamanan Kursi (Seat Comfort)", 0, 5, 3)
+    food_and_drink = st.slider("Makanan dan Minuman (Food and Drink)", 0, 5, 3)
+    inflight_wifi = st.slider("Wi-Fi di Pesawat (Inflight WiFi)", 0, 5, 3)
+    online_booking = st.slider("Kemudahan Pemesanan Online (Ease of Online Booking)", 0, 5, 3)
+    online_boarding = st.slider("Proses Boarding Online", 0, 5, 3)
+    inflight_service = st.slider("Layanan di Pesawat (Inflight Service)", 0, 5, 3)
+    baggage_handling = st.slider("Penanganan Bagasi (Baggage Handling)", 0, 5, 3)
+    onboard_service = st.slider("Layanan di Pesawat (On-board Service)", 0, 5, 3)
+    
+    submitted = st.form_submit_button("Submit")
 
-    # Ensure required columns are present
-    required_columns = ['Age', 'Class', 'Departure Arrival time convenient', 
-                        'Gate location', 'Leg room service', 'Checkin service', 
-                        'Cleanliness', 'Inflight entertainment', 'Seat comfort', 
-                        'Food and drink', 'Inflight wifi service', 'Ease of Online booking', 
-                        'Online boarding', 'Inflight service', 'Baggage handling', 
-                        'On-board service']
-
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        st.error(f"Missing columns in input data: {', '.join(missing_columns)}")
-        return None
-
-    # Convert 'Class' to numerical
+if submitted:
+    # Map flight class to numerical values
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
-    data['Class'] = data['Class'].map(class_mapping)
+    flight_class = class_mapping[flight_class]
 
-    if data['Class'].isnull().any():
-        st.error("Invalid 'Class' value. Please use 'Business', 'Eco Plus', or 'Eco'.")
-        return None
+    # Prepare input data
+    input_data = {
+        'Age': age,
+        'Class': flight_class,
+        'Departure Arrival time convenient': departure_convenience,
+        'Gate location': gate_location,
+        'Leg room service': leg_room_service,
+        'Checkin service': checkin_service,
+        'Cleanliness': cleanliness,
+        'Inflight entertainment': inflight_entertainment,
+        'Seat comfort': seat_comfort,
+        'Food and drink': food_and_drink,
+        'Inflight wifi service': inflight_wifi,
+        'Ease of Online booking': online_booking,
+        'Online boarding': online_boarding,
+        'Inflight service': inflight_service,
+        'Baggage handling': baggage_handling,
+        'On-board service': onboard_service
+    }
 
-    # Extract features to scale for PCA
+    data_df = pd.DataFrame([input_data])
+
+    # Scale and process the data (excluding specific features from scaling)
     features_to_scale = [
-        'Age', 'Class', 'Departure Arrival time convenient', 'Gate location',
-        'Leg room service', 'Checkin service', 'Cleanliness', 'Inflight entertainment',
-        'Seat comfort', 'Food and drink', 'Inflight wifi service', 'Ease of Online booking',
-        'Online boarding', 'Inflight service', 'Baggage handling', 'On-board service'
+        'Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink',
+        'Inflight wifi service', 'Ease of Online booking', 'Online boarding',
+        'Inflight service', 'Baggage handling', 'On-board service'
     ]
+    scaled_features = scaler.transform(data_df[features_to_scale])
 
-    # Debug print to check feature names
-    print("Input data columns:", data.columns.tolist())
-    print("Expected features to scale:", features_to_scale)
+    # Combine unscaled and scaled features
+    unscaled_features = data_df[['Age', 'Class', 'Departure Arrival time convenient', 'Gate location', 'Leg room service', 'Checkin service']].values
+    combined_features = np.hstack([unscaled_features, scaled_features])
 
-    # Scale the features
-    try:
-        scaled_data = scaler.transform(data[features_to_scale])
-    except ValueError as e:
-        st.error(f"Error during scaling: {e}")
-        return None
+    # Apply PCA for each group
+    pca_group1_result = pca_group1.transform(combined_features[:, 5:9])  # Group1
+    pca_group2_result = pca_group2.transform(combined_features[:, 9:12])  # Group2
+    pca_group3_result = pca_group3.transform(combined_features[:, 12:])  # Group3
 
-    # Apply PCA to the scaled features for each group
-    pca_group1_result = pca_group1.transform(scaled_data[:, 6:10])  # Columns for 'Group1'
-    pca_group2_result = pca_group2.transform(scaled_data[:, 10:13])  # Columns for 'Group2'
-    pca_group3_result = pca_group3.transform(scaled_data[:, 13:])  # Columns for 'Group3'
+    # Combine results
+    pca_features = np.hstack([pca_group1_result, pca_group2_result, pca_group3_result])
 
-    # Combine scaled features and PCA results into the final feature set
-    final_scaled_data = pd.DataFrame(scaled_data[:, :6], columns=features_to_scale[:6])
+    # Include unscaled features and PCA features for final prediction
+    final_data = np.hstack([unscaled_features, pca_features])
 
-    # Combine PCA results into the final dataframe
-    pca_cols = ['Group1_PC1', 'Group1_PC2', 'Group2_PC1', 'Group2_PC2', 'Group3_PC1', 'Group3_PC2']
-    pca_features = pd.DataFrame(np.hstack([pca_group1_result, pca_group2_result, pca_group3_result]), columns=pca_cols)
+    # Predict cluster
+    cluster = kmeans.predict(final_data)[0]
 
-    # Concatenate the scaled features with PCA features
-    final_data = pd.concat([final_scaled_data, pca_features], axis=1)
-
-    # Ensure the correct order of columns (must match what was used in training)
-    final_data = final_data[expected_columns]
-
-    # Perform clustering prediction using the trained KMeans model
-    cluster_prediction = kmeans.predict(final_data)
-
-    # Add the cluster prediction to the final data for reference
-    final_data['Predicted Cluster'] = cluster_prediction
-
-    # Display the final features along with the predicted cluster
-    st.write("Final features for inference:", final_data.columns.tolist())
-    st.write("Cluster prediction for this input data:", cluster_prediction[0])
-
-    return final_data
-
-# Example input
-input_data = {
-    'Age': 25,
-    'Class': 'Business',
-    'Departure Arrival time convenient': 1,
-    'Gate location': 3,
-    'Leg room service': 4,
-    'Checkin service': 5,
-    'Cleanliness': 4,
-    'Inflight entertainment': 3,
-    'Seat comfort': 5,
-    'Food and drink': 3,
-    'Inflight wifi service': 2,
-    'Ease of Online booking': 4,
-    'Online boarding': 3,
-    'Inflight service': 5,
-    'Baggage handling': 4,
-    'On-board service': 5
-}
-
-# Pass the input data into the function
-processed_data = preprocess_inference(input_data)
+    # Display the result
+    st.write(f"Data Anda masuk ke dalam Cluster: {cluster}")
