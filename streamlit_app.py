@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import joblib
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-import joblib
 
 st.title('Airplane Passenger Satisfaction Clustering')
 st.header("Kelompok 4 Kelas D")
@@ -23,103 +23,95 @@ pca_group1 = joblib.load('pca_group1.pkl')
 pca_group2 = joblib.load('pca_group2.pkl')
 pca_group3 = joblib.load('pca_group3.pkl')
 
-st.write("Expected features from model:", kmeans.feature_names_in_.tolist())
-
 def preprocess_inference(data):
+    # Ensure data is a DataFrame
     if isinstance(data, dict):
         data = pd.DataFrame([data])
-    
-    # Exact column order from CSV
-    expected_columns = [
-        'Class',
-        'Age',
-        'Departure/Arrival time convenient',
-        'Gate location',
-        'Leg room service',
-        'Checkin service',
-        'Cleanliness',
-        'Inflight entertainment',
-        'Seat comfort',
-        'Food and drink',
-        'Inflight wifi service',
-        'Ease of Online booking',
-        'Online boarding',
-        'Inflight service',
-        'Baggage handling',
-        'On-board service'
-    ]
-    
-    # Ensure columns are in correct order
-    data = data[expected_columns]
-    
-    # Convert Class to numeric
+
+    # Rename columns to match the training dataset
+    data.rename(columns={
+        "Departure/Arrival time convenient": "Departure Arrival time convenient",
+        "Gate location": "Gate location",
+        "Leg room service": "Leg room service",
+        "Checkin service": "Checkin service",
+        "Cleanliness": "Cleanliness",
+        "Inflight entertainment": "Inflight entertainment",
+        "Seat comfort": "Seat comfort",
+        "Food and drink": "Food and drink",
+        "Inflight wifi service": "Inflight wifi service",
+        "Ease of Online booking": "Ease of Online booking",
+        "Online boarding": "Online boarding",
+        "Inflight service": "Inflight service",
+        "Baggage handling": "Baggage handling",
+        "On-board service": "On-board service"
+    }, inplace=True)
+
+    # Map Class values exactly as in training
     class_mapping = {"Business": 2, "Eco Plus": 1, "Eco": 0}
     data['Class'] = data['Class'].map(class_mapping)
-    
-    # Define groups for PCA
+
+    # Define feature groups for PCA and scaling
     group1 = ['Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink']
     group2 = ['Inflight wifi service', 'Ease of Online booking', 'Online boarding']
     group3 = ['Inflight service', 'Baggage handling', 'On-board service']
-    
-    # Scale and transform groups
-    group1_data = scaler.transform(data[group1])
-    group2_data = scaler.transform(data[group2])
-    group3_data = scaler.transform(data[group3])
-    
-    # Apply PCA
-    group1_pca = pca_group1.transform(group1_data)
-    group2_pca = pca_group2.transform(group2_data)
-    group3_pca = pca_group3.transform(group3_data)
-    
-    # Create DataFrame with numerical features
+
+    # Numerical features for scaling
     numerical_features = [
         'Age',
         'Class',
-        'Departure/Arrival time convenient',
+        'Departure Arrival time convenient',
         'Gate location',
         'Leg room service',
         'Checkin service'
     ]
-    result_df = data[numerical_features].copy()
+
+    # Scale the features before applying PCA
+    scaled_data_group1 = scaler.transform(data[group1])
+    scaled_data_group2 = scaler.transform(data[group2])
+    scaled_data_group3 = scaler.transform(data[group3])
+
+    # Apply PCA transformation
+    group1_pca = pca_group1.transform(scaled_data_group1)
+    group2_pca = pca_group2.transform(scaled_data_group2)
+    group3_pca = pca_group3.transform(scaled_data_group3)
+
+    # Combine original features with PCA results
+    pca_cols = ['Group1_PC1', 'Group1_PC2', 'Group2_PC1', 'Group2_PC2', 'Group3_PC1', 'Group3_PC2']
+    pca_features = pd.DataFrame(np.hstack([group1_pca, group2_pca, group3_pca]), columns=pca_cols)
+
+    final_features = pd.DataFrame(data[numerical_features].values, columns=numerical_features)
     
-    # Add PCA components
-    for i, pca_data in enumerate(group1_pca[0]):
-        result_df[f'Group1_PC{i+1}'] = pca_data
-    for i, pca_data in enumerate(group2_pca[0]):
-        result_df[f'Group2_PC{i+1}'] = pca_data
-    for i, pca_data in enumerate(group3_pca[0]):
-        result_df[f'Group3_PC{i+1}'] = pca_data
-    
-    return result_df
+    # Concatenate the scaled features and PCA results
+    final_features = pd.concat([final_features, pca_features], axis=1)
+
+    return final_features
 
 st.header("Masukkan Data untuk Klasifikasi")
 
 with st.form("data_input_form"):
-    # Form inputs sesuai urutan CSV
     Class = st.selectbox("Class", ["Business", "Eco Plus", "Eco"])
     Age = st.number_input("Age", min_value=0, max_value=100, value=25)
-    Departure_Arrival_time_convenient = st.slider("Departure/Arrival time convenient", 0, 5, 0)
-    Gate_location = st.slider("Gate location", 0, 5, 1)
-    Leg_room_service = st.slider("Leg room service", 0, 5, 0)
-    Checkin_service = st.slider("Checkin service", 0, 5, 1)
+    Departure_Arrival_time_convenient = st.slider("Departure/Arrival time convenient", 0, 5)
+    Gate_location = st.slider("Gate location", 1, 5)
+    Leg_room_service = st.slider("Leg room service", 0, 5)
+    Checkin_service = st.slider("Checkin service", 1, 5)
     
-    Cleanliness = st.slider("Cleanliness", 0, 5, 0)
-    Inflight_entertainment = st.slider("Inflight entertainment", 0, 5, 0)
-    Seat_comfort = st.slider("Seat comfort", 0, 5, 1)
-    Food_and_drink = st.slider("Food and drink", 0, 5, 0)
+    Cleanliness = st.slider("Cleanliness", 0, 5)
+    Inflight_entertainment = st.slider("Inflight entertainment", 0, 5)
+    Seat_comfort = st.slider("Seat comfort", 1, 5)
+    Food_and_drink = st.slider("Food and drink", 0, 5)
     
-    Inflight_wifi_service = st.slider("Inflight wifi service", 0, 5, 1)
-    Ease_of_Online_booking = st.slider("Ease of Online booking", 0, 5, 0)
-    Online_boarding = st.slider("Online boarding", 0, 5, 0)
+    Inflight_wifi_service = st.slider("Inflight wifi service", 1, 5)
+    Ease_of_Online_booking = st.slider("Ease of Online booking", 0, 5)
+    Online_boarding = st.slider("Online boarding", 0, 5)
     
-    Inflight_service = st.slider("Inflight service", 0, 5, 0)
-    Baggage_handling = st.slider("Baggage handling", 0, 5, 1)
-    On_board_service = st.slider("On-board service", 0, 5, 0)
+    Inflight_service = st.slider("Inflight service", 0, 5)
+    Baggage_handling = st.slider("Baggage handling", 1, 5)
+    On_board_service = st.slider("On-board service", 0, 5)
     
     submitted = st.form_submit_button("Submit")
 
 if submitted:
-    # Create input data dalam urutan yang sama dengan CSV
     user_data = {
         "Class": Class,
         "Age": Age,
@@ -140,26 +132,12 @@ if submitted:
     }
     
     try:
-        # Debug: tampilkan data input
-        st.write("Input features:")
-        input_df = pd.DataFrame([user_data])
-        st.write(input_df)
-        
-        # Proses data
+        # Preprocess the input data
         processed_data = preprocess_inference(user_data)
         
-        # Debug: tampilkan data yang telah diproses
-        st.write("Processed features:")
-        st.write(processed_data)
-        
-        # Debug: tampilkan nama-nama fitur
-        st.write("Feature names in processed data:", processed_data.columns.tolist())
-        
-        # Prediksi
+        # Predict the cluster
         cluster = kmeans.predict(processed_data)[0]
         st.success(f"Data Anda termasuk dalam Cluster: {cluster}")
         
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
-        st.write("Debug information:")
-        st.write(f"Available columns: {list(processed_data.columns) if 'processed_data' in locals() else 'No processed data available'}")
