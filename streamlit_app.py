@@ -83,13 +83,13 @@ if submitted:
     scaled_features = scaler.transform(data_df[features_to_scale])
 
     # Combine unscaled and scaled features
-    unscaled_features = data_df[['Age', 'Class', 'Departure Arrival time convenient', 'Gate location', 'Leg room service', 'Checkin service']].values
+    unscaled_features = data_df[['Age', 'Class', 'Departure Arrival time convenient', 'Gate location', 'Leg room service']].values
     combined_features = np.hstack([unscaled_features, scaled_features])
 
     # Apply PCA for each group (assumes pca_group1, pca_group2, pca_group3, and kmeans are already loaded)
-    pca_group1_result = pca_group1.transform(combined_features[:, 6:10])  # Group1
-    pca_group2_result = pca_group2.transform(combined_features[:, 10:13])  # Group2
-    pca_group3_result = pca_group3.transform(combined_features[:, 13:])  # Group3
+    pca_group1_result = pca_group1.transform(combined_features[:, 5:9])  # Group1
+    pca_group2_result = pca_group2.transform(combined_features[:, 9:12])  # Group2
+    pca_group3_result = pca_group3.transform(combined_features[:, 12:])  # Group3
 
     # Combine results
     pca_features = np.hstack([pca_group1_result, pca_group2_result, pca_group3_result])
