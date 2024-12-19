@@ -16,6 +16,16 @@ from sklearn.preprocessing import MinMaxScaler
 st.title("Passenger Clustering App")
 st.write("Aplikasi ini akan memprediksi cluster untuk data penumpang berdasarkan input fitur Anda.")
 
+with st.expander("Kelompok 4 Kelas D"):
+      # Anggota
+      st.markdown("""
+      -  Rania (24060122120013)  
+      -  Happy Desita W (24060122120023)  
+      -  Syakira Nada N (24060122130049)  
+      -  Asy’syifa Shabrina M (24060122130055)  
+        """)
+
+
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import pandas as pd
@@ -101,12 +111,12 @@ if submitted:
     cluster = kmeans.predict(final_data)[0]
 
     # Display the result
-    st.write(f"### Data Anda masuk ke dalam Cluster: {cluster}")
+    st.write(f"## Data Anda masuk ke dalam Cluster: {cluster}")
 
     # Profiling for each cluster
     if cluster == 0:
-        st.write("## Profil Cluster 0:")
+        st.write("### Profil Cluster 0:")
         st.write("Cluster 0: Penumpang lebih tua (usia rata-rata 51.81 tahun), cenderung memilih kelas eco plus, dan fokus pada kenyamanan kursi, kebersihan, dan layanan ruang kaki. Pentingnya kemudahan pemesanan online dan efisiensi layanan bagasi juga menonjol.")
     elif cluster == 1:
-        st.write("## Profil Cluster 1:")
+        st.write("### Profil Cluster 1:")
         st.write("Cluster 1: Penumpang muda (usia rata-rata 26.61 tahun), lebih sering memilih kelas ekonomi, dan menghargai kenyamanan kursi, layanan digital seperti pemesanan online, dan keandalan layanan bagasi.")
