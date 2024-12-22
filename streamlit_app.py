@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import joblib
-from sklearn.preprocessing import MinMaxScaler
 
 # Load pre-trained models and scalers
 # scaler = joblib.load('scaler.pkl')
@@ -11,8 +10,7 @@ pca_group2 = joblib.load('pca_group2.pkl')
 pca_group3 = joblib.load('pca_group3.pkl')
 kmeans = joblib.load('kmeans_model.pkl')
 
-scaler_0_1 = MinMaxScaler()  # Assuming scaler for 0-1 scaling
-scaler_0_5 = MinMaxScaler(feature_range=(0, 5))  # Assuming scaler for 0-5 scaling
+from sklearn.preprocessing import MinMaxScaler
 
 # Title and Description
 st.title("Passenger Clustering App")
@@ -26,6 +24,19 @@ with st.expander("Kelompok 4 Kelas D"):
       -  Syakira Nada N (24060122130049)  
       -  Asy’syifa Shabrina M (24060122130055)  
         """)
+
+
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+import pandas as pd
+import streamlit as st
+
+# Initialize MinMaxScaler
+scaler = MinMaxScaler(feature_range=(0, 1))
+
+# Fit the scaler with dummy data for the expected range
+dummy_data = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]])
+scaler.fit(dummy_data)  # Fit scaler with the expected range of features
 
 # Input Form
 with st.form("clustering_form"):
@@ -56,7 +67,7 @@ if submitted:
     input_data = {
         'Age': age,
         'Class': flight_class,
-        'Departure/Arrival time convenient': departure_convenience,
+        'Departure Arrival time convenient': departure_convenience,
         'Gate location': gate_location,
         'Leg room service': leg_room_service,
         'Cleanliness': cleanliness,
@@ -71,40 +82,32 @@ if submitted:
         'On-board service': onboard_service
     }
 
-    df_input = pd.DataFrame([input_data])
+    data_df = pd.DataFrame([input_data])
 
-    # 1. Scale features to 0-1 for specific columns
-    features_to_scale_0_1 = [
+    # Scale and process the data (excluding specific features from scaling)
+    features_to_scale = [
         'Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink',
         'Inflight wifi service', 'Ease of Online booking', 'Online boarding',
         'Inflight service', 'Baggage handling', 'On-board service'
     ]
-    scaled_features_0_1 = scaler_0_1.fit_transform(df_input[features_to_scale_0_1])
+    scaled_features = scaler.transform(data_df[features_to_scale])
 
-    # Combine unscaled features (non-scaled columns)
-    unscaled_features = df_input[['Departure/Arrival time convenient', 'Gate location', 'Leg room service']].values
-    
-    # Normalize Age and Class columns to range 0-5
-    scaled_age_class = scaler_0_5.fit_transform(df_input[['Age', 'Class']])
+    # Combine unscaled and scaled features
+    unscaled_features = data_df[['Age', 'Class', 'Departure Arrival time convenient', 'Gate location', 'Leg room service']].values
+    combined_features = np.hstack([unscaled_features, scaled_features])
 
-    # Combine scaled Age/Class features with unscaled ones
-    combined_features = np.hstack([scaled_age_class, unscaled_features, scaled_features_0_1])
+    # Apply PCA for each group (assumes pca_group1, pca_group2, pca_group3, and kmeans are already loaded)
+    pca_group1_result = pca_group1.transform(combined_features[:, 5:9])  # Group1
+    pca_group2_result = pca_group2.transform(combined_features[:, 9:12])  # Group2
+    pca_group3_result = pca_group3.transform(combined_features[:, 12:])  # Group3
 
-    # 2. Apply PCA for each group (Group 1, 2, 3)
-    pca_group1_result = pca_group1.transform(combined_features[:, 5:9])  # Group 1 features
-    pca_group2_result = pca_group2.transform(combined_features[:, 9:12])  # Group 2 features
-    pca_group3_result = pca_group3.transform(combined_features[:, 12:])  # Group 3 features
-
-    # Combine PCA results
+    # Combine results
     pca_features = np.hstack([pca_group1_result, pca_group2_result, pca_group3_result])
 
-    # 3. Normalize PCA results to range 0-5
-    scaled_pca_features = scaler_0_5.fit_transform(pca_features)
+    # Include unscaled features and PCA features for final prediction
+    final_data = np.hstack([unscaled_features, pca_features])
 
-    # 4. Combine unscaled features and scaled PCA features
-    final_data = np.hstack([combined_features[:, :5], scaled_pca_features])
-
-    # Predict cluster using KMeans
+    # Predict cluster
     cluster = kmeans.predict(final_data)[0]
 
     # Display the result
@@ -113,7 +116,7 @@ if submitted:
     # Profiling for each cluster
     if cluster == 0:
         st.write("### Profil Cluster 0:")
-        st.write("Cluster 0 didominasi oleh penumpang dengan rata-rata usia lebih tua, lebih memilih layanan premium (eco plus atau business) dengan tingkat kenyamanan tinggi dalam aspek kursi, kebersihan, dan layanan ruang kaki. Mereka juga menghargai kemudahan dalam pemesanan tiket dan efisiensi layanan bagasi. Fokus utama adalah kenyamanan fisik selama penerbangan dan kualitas layanan.")
+        st.write("Cluster 0: Penumpang lebih tua (usia rata-rata 51.81 tahun), cenderung memilih kelas eco plus, dan fokus pada kenyamanan kursi, kebersihan, dan layanan ruang kaki. Pentingnya kemudahan pemesanan online dan efisiensi layanan bagasi juga menonjol.")
     elif cluster == 1:
         st.write("### Profil Cluster 1:")
-        st.write("Cluster 1 terdiri dari penumpang yang lebih muda, lebih memilih kelas ekonomi dengan preferensi pada layanan yang hemat biaya. Meskipun mereka memberi perhatian terhadap kenyamanan kursi dan kebersihan, mereka lebih menghargai kemudahan dalam pengalaman digital seperti pemesanan online dan proses boarding. Layanan bagasi juga menjadi perhatian penting bagi mereka.")
+        st.write("Cluster 1: Penumpang muda (usia rata-rata 26.61 tahun), lebih sering memilih kelas ekonomi, dan menghargai kenyamanan kursi, layanan digital seperti pemesanan online, dan keandalan layanan bagasi.")
