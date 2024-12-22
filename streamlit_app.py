@@ -68,7 +68,7 @@ if submitted:
         'On-board service': onboard_service
     }
 
-    data_df = pd.DataFrame([input_data])
+    df_input = pd.DataFrame([input_data])
 
     # 1. Skalakan fitur sebelum PCA dengan MinMaxScaler default (0, 1)
     scaler_before_pca = MinMaxScaler()
