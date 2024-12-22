@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import joblib
+from sklearn.preprocessing import MinMaxScaler
 
 # Load pre-trained models and scalers
 # scaler = joblib.load('scaler.pkl')
@@ -9,8 +10,6 @@ pca_group1 = joblib.load('pca_group1.pkl')
 pca_group2 = joblib.load('pca_group2.pkl')
 pca_group3 = joblib.load('pca_group3.pkl')
 kmeans = joblib.load('kmeans_model.pkl')
-
-from sklearn.preprocessing import MinMaxScaler
 
 # Title and Description
 st.title("Passenger Clustering App")
@@ -24,19 +23,6 @@ with st.expander("Kelompok 4 Kelas D"):
       -  Syakira Nada N (24060122130049)  
       -  Asy’syifa Shabrina M (24060122130055)  
         """)
-
-
-from sklearn.preprocessing import MinMaxScaler
-import numpy as np
-import pandas as pd
-import streamlit as st
-
-# Initialize MinMaxScaler
-scaler = MinMaxScaler(feature_range=(0, 1))
-
-# Fit the scaler with dummy data for the expected range
-dummy_data = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]])
-scaler.fit(dummy_data)  # Fit scaler with the expected range of features
 
 # Input Form
 with st.form("clustering_form"):
@@ -84,31 +70,49 @@ if submitted:
 
     data_df = pd.DataFrame([input_data])
 
-    # Scale and process the data (excluding specific features from scaling)
-    features_to_scale = [
+    # 1. Skalakan fitur sebelum PCA dengan MinMaxScaler default (0, 1)
+    scaler_before_pca = MinMaxScaler()
+    features_before_pca = [
         'Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink',
         'Inflight wifi service', 'Ease of Online booking', 'Online boarding',
         'Inflight service', 'Baggage handling', 'On-board service'
     ]
-    scaled_features = scaler.transform(data_df[features_to_scale])
+    scaled_features = scaler_before_pca.fit_transform(df_input[features_before_pca])
 
-    # Combine unscaled and scaled features
-    unscaled_features = data_df[['Age', 'Class', 'Departure Arrival time convenient', 'Gate location', 'Leg room service']].values
-    combined_features = np.hstack([unscaled_features, scaled_features])
+    # 2. Terapkan PCA pada fitur yang sudah dinormalisasi
+    group1_features = scaled_features[:, :4]  # Fitur untuk Group1 (kolom 1-4)
+    group2_features = scaled_features[:, 4:7]  # Fitur untuk Group2 (kolom 5-7)
+    group3_features = scaled_features[:, 7:]  # Fitur untuk Group3 (kolom 8-10)
 
-    # Apply PCA for each group (assumes pca_group1, pca_group2, pca_group3, and kmeans are already loaded)
-    pca_group1_result = pca_group1.transform(combined_features[:, 5:9])  # Group1
-    pca_group2_result = pca_group2.transform(combined_features[:, 9:12])  # Group2
-    pca_group3_result = pca_group3.transform(combined_features[:, 12:])  # Group3
+    group1_pca = pca_group1.transform(group1_features)
+    group2_pca = pca_group2.transform(group2_features)
+    group3_pca = pca_group3.transform(group3_features)
 
-    # Combine results
-    pca_features = np.hstack([pca_group1_result, pca_group2_result, pca_group3_result])
+    # Gabungkan hasil PCA
+    pca_results = np.hstack([group1_pca, group2_pca, group3_pca])
 
-    # Include unscaled features and PCA features for final prediction
-    final_data = np.hstack([unscaled_features, pca_features])
+    # 3. Gabungkan kolom tambahan dengan hasil PCA
+    columns_to_keep = ['Age', 'Class', 'Departure/Arrival time convenient', 'Gate location', 'Leg room service']
+    data_for_scaling = df_input[['Age', 'Class']].values  # Hanya kolom Age dan Class yang akan diskalakan
+    final_data = np.hstack([data_for_scaling, df_input[columns_to_keep[2:]].values, pca_results])
 
+    # 4. Skalakan hanya kolom Age, Class, dan hasil PCA dengan MinMaxScaler (0, 5)
+    scaler_final = MinMaxScaler(feature_range=(0, 5))
+    scaled_part = scaler_final.fit_transform(np.hstack([data_for_scaling, pca_results]))
+    final_scaled_data = np.hstack([scaled_part, df_input[columns_to_keep[2:]].values])  # Gabungkan dengan kolom tambahan
+
+    # Buat DataFrame final
+    final_columns = [
+        'Age', 'Class', 'Departure/Arrival time convenient', 'Gate location', 'Leg room service',
+        'Group1_PC1', 'Group1_PC2', 'Group2_PC1', 'Group2_PC2', 'Group3_PC1', 'Group3_PC2'
+    ]
+    df_final = pd.DataFrame(final_scaled_data, columns=final_columns)
+      
+    # Tampilkan hasil
+    st.write(df_final)
+      
     # Predict cluster
-    cluster = kmeans.predict(final_data)[0]
+    cluster = kmeans.predict(final_scaled_data)[0]
 
     # Display the result
     st.write(f"## Data Anda masuk ke dalam Cluster: {cluster}")
