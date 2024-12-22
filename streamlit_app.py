@@ -53,7 +53,7 @@ if submitted:
     input_data = {
         'Age': age,
         'Class': flight_class,
-        'Departure Arrival time convenient': departure_convenience,
+        'Departure/Arrival time convenient': departure_convenience,
         'Gate location': gate_location,
         'Leg room service': leg_room_service,
         'Cleanliness': cleanliness,
@@ -120,7 +120,7 @@ if submitted:
     # Profiling for each cluster
     if cluster == 0:
         st.write("### Profil Cluster 0:")
-        st.write("Cluster 0: Penumpang lebih tua (usia rata-rata 51.81 tahun), cenderung memilih kelas eco plus, dan fokus pada kenyamanan kursi, kebersihan, dan layanan ruang kaki. Pentingnya kemudahan pemesanan online dan efisiensi layanan bagasi juga menonjol.")
+        st.write("Cluster 0 didominasi oleh penumpang dengan rata-rata usia lebih tua, lebih memilih layanan premium (eco plus atau business) dengan tingkat kenyamanan tinggi dalam aspek kursi, kebersihan, dan layanan ruang kaki. Mereka juga menghargai kemudahan dalam pemesanan tiket dan efisiensi layanan bagasi. Fokus utama adalah kenyamanan fisik selama penerbangan dan kualitas layanan.")
     elif cluster == 1:
         st.write("### Profil Cluster 1:")
-        st.write("Cluster 1: Penumpang muda (usia rata-rata 26.61 tahun), lebih sering memilih kelas ekonomi, dan menghargai kenyamanan kursi, layanan digital seperti pemesanan online, dan keandalan layanan bagasi.")
+        st.write("Cluster 1 terdiri dari penumpang yang lebih muda, lebih memilih kelas ekonomi dengan preferensi pada layanan yang hemat biaya. Meskipun mereka memberi perhatian terhadap kenyamanan kursi dan kebersihan, mereka lebih menghargai kemudahan dalam pengalaman digital seperti pemesanan online dan proses boarding. Layanan bagasi juga menjadi perhatian penting bagi mereka.")
