@@ -11,6 +11,9 @@ pca_group2 = joblib.load('pca_group2.pkl')
 pca_group3 = joblib.load('pca_group3.pkl')
 kmeans = joblib.load('kmeans_model.pkl')
 
+scaler_0_1 = MinMaxScaler()  # Assuming scaler for 0-1 scaling
+scaler_0_5 = MinMaxScaler(feature_range=(0, 5))  # Assuming scaler for 0-5 scaling
+
 # Title and Description
 st.title("Passenger Clustering App")
 st.write("Aplikasi ini akan memprediksi cluster untuk data penumpang berdasarkan input fitur Anda.")
@@ -70,49 +73,39 @@ if submitted:
 
     df_input = pd.DataFrame([input_data])
 
-    # 1. Skalakan fitur sebelum PCA dengan MinMaxScaler default (0, 1)
-    scaler_before_pca = MinMaxScaler()
-    features_before_pca = [
+    # 1. Scale features to 0-1 for specific columns
+    features_to_scale_0_1 = [
         'Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink',
         'Inflight wifi service', 'Ease of Online booking', 'Online boarding',
         'Inflight service', 'Baggage handling', 'On-board service'
     ]
-    scaled_features = scaler_before_pca.fit_transform(df_input[features_before_pca])
+    scaled_features_0_1 = scaler_0_1.fit_transform(df_input[features_to_scale_0_1])
 
-    # 2. Terapkan PCA pada fitur yang sudah dinormalisasi
-    group1_features = scaled_features[:, :4]  # Fitur untuk Group1 (kolom 1-4)
-    group2_features = scaled_features[:, 4:7]  # Fitur untuk Group2 (kolom 5-7)
-    group3_features = scaled_features[:, 7:]  # Fitur untuk Group3 (kolom 8-10)
+    # Combine unscaled features (non-scaled columns)
+    unscaled_features = df_input[['Departure/Arrival time convenient', 'Gate location', 'Leg room service']].values
+    
+    # Normalize Age and Class columns to range 0-5
+    scaled_age_class = scaler_0_5.fit_transform(df_input[['Age', 'Class']])
 
-    group1_pca = pca_group1.transform(group1_features)
-    group2_pca = pca_group2.transform(group2_features)
-    group3_pca = pca_group3.transform(group3_features)
+    # Combine scaled Age/Class features with unscaled ones
+    combined_features = np.hstack([scaled_age_class, unscaled_features, scaled_features_0_1])
 
-    # Gabungkan hasil PCA
-    pca_results = np.hstack([group1_pca, group2_pca, group3_pca])
+    # 2. Apply PCA for each group (Group 1, 2, 3)
+    pca_group1_result = pca_group1.transform(combined_features[:, 5:9])  # Group 1 features
+    pca_group2_result = pca_group2.transform(combined_features[:, 9:12])  # Group 2 features
+    pca_group3_result = pca_group3.transform(combined_features[:, 12:])  # Group 3 features
 
-    # 3. Gabungkan kolom tambahan dengan hasil PCA
-    columns_to_keep = ['Age', 'Class', 'Departure/Arrival time convenient', 'Gate location', 'Leg room service']
-    data_for_scaling = df_input[['Age', 'Class']].values  # Hanya kolom Age dan Class yang akan diskalakan
-    final_data = np.hstack([data_for_scaling, df_input[columns_to_keep[2:]].values, pca_results])
+    # Combine PCA results
+    pca_features = np.hstack([pca_group1_result, pca_group2_result, pca_group3_result])
 
-    # 4. Skalakan hanya kolom Age, Class, dan hasil PCA dengan MinMaxScaler (0, 5)
-    scaler_final = MinMaxScaler(feature_range=(0, 5))
-    scaled_part = scaler_final.fit_transform(np.hstack([data_for_scaling, pca_results]))
-    final_scaled_data = np.hstack([scaled_part, df_input[columns_to_keep[2:]].values])  # Gabungkan dengan kolom tambahan
+    # 3. Normalize PCA results to range 0-5
+    scaled_pca_features = scaler_0_5.fit_transform(pca_features)
 
-    # Buat DataFrame final
-    final_columns = [
-        'Age', 'Class', 'Departure/Arrival time convenient', 'Gate location', 'Leg room service',
-        'Group1_PC1', 'Group1_PC2', 'Group2_PC1', 'Group2_PC2', 'Group3_PC1', 'Group3_PC2'
-    ]
-    df_final = pd.DataFrame(final_scaled_data, columns=final_columns)
-      
-    # Tampilkan hasil
-    st.write(df_final)
-      
-    # Predict cluster
-    cluster = kmeans.predict(final_scaled_data)[0]
+    # 4. Combine unscaled features and scaled PCA features
+    final_data = np.hstack([combined_features[:, :5], scaled_pca_features])
+
+    # Predict cluster using KMeans
+    cluster = kmeans.predict(final_data)[0]
 
     # Display the result
     st.write(f"## Data Anda masuk ke dalam Cluster: {cluster}")
