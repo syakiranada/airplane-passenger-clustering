@@ -11,9 +11,6 @@ pca_group2 = joblib.load('pca_group2.pkl')
 pca_group3 = joblib.load('pca_group3.pkl')
 kmeans = joblib.load('kmeans_model.pkl')
 
-scaler_0_1 = MinMaxScaler() 
-scaler_0_5 = MinMaxScaler(feature_range=(0, 5))
-
 # Title and Description
 st.title("Passenger Clustering App")
 st.write("Aplikasi ini akan memprediksi cluster untuk data penumpang berdasarkan input fitur Anda.")
@@ -73,19 +70,31 @@ if submitted:
 
     df_input = pd.DataFrame([input_data])
 
+    scaler_0_1 = MinMaxScaler() 
+    scaler_0_5 = MinMaxScaler(feature_range=(0, 5))
+
+    # For features_to_scale_0_1 (10 features)
+    dummy_data_0_1 = np.array([[0] * 10, [5] * 10])
+    scaler_0_1.fit(dummy_data_0_1)
+
     # 1. Scale features to 0-1 for specific columns (other features)
     features_to_scale_0_1 = [
         'Cleanliness', 'Inflight entertainment', 'Seat comfort', 'Food and drink',
         'Inflight wifi service', 'Ease of Online booking', 'Online boarding',
         'Inflight service', 'Baggage handling', 'On-board service'
     ]
-    scaled_features_0_1 = scaler_0_1.fit_transform(df_input[features_to_scale_0_1])
+    scaled_features_0_1 = scaler_0_1.transform(df_input[features_to_scale_0_1])
 
     # Combine unscaled features (non-scaled columns)
     unscaled_features = df_input[['Departure/Arrival time convenient', 'Gate location', 'Leg room service']].values
     
+
+    # Fit scaler for Age and Class to range 0-5
+    dummy_data_age_class = np.array([[7, 0], [85, 2]])  # Rentang asli Age: 7-85, Class: 0-2
+    scaler_0_5.fit(dummy_data_age_class)
+
     # Normalize Age and Class columns to range 0-5
-    scaled_age_class = scaler_0_5.fit_transform(df_input[['Age', 'Class']])
+    scaled_age_class = scaler_0_5.transform(df_input[['Age', 'Class']])
 
     # Combine scaled Age/Class features with unscaled ones
     combined_features = np.hstack([scaled_age_class, unscaled_features, scaled_features_0_1])
@@ -98,10 +107,18 @@ if submitted:
     # Combine PCA results
     pca_features = np.hstack([pca_group1_result, pca_group2_result, pca_group3_result])
 
-    # 3. Normalize PCA results to range 0-5
-    scaled_pca_features = scaler_0_5.fit_transform(pca_features)
+    # Check range of PCA features
+    pca_min = pca_features.min()
+    pca_max = pca_features.max()
 
-    # 4. Combine unscaled features and scaled PCA features
+    # Fit scaler to normalize PCA results to 0-5
+    dummy_data_pca = np.array([[pca_min] * pca_features.shape[1], [pca_max] * pca_features.shape[1]])
+    scaler_0_5.fit(dummy_data_pca)
+
+    # Normalize PCA results to range 0-5
+    scaled_pca_features = scaler_0_5.transform(pca_features)
+
+    # Combine unscaled features and scaled PCA features
     final_data = np.hstack([combined_features[:, :5], scaled_pca_features])
 
     # Predict cluster using KMeans
